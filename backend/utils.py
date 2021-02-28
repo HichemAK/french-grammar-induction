@@ -21,6 +21,9 @@ def grammar_induction(sent_tags : list, n=3):
                 l += [tuple(s[j:j+i]) for j in range(len(s) - i)]
         counter = Counter(l)
 
+        if len(counter) == 1:
+            break
+
         # Most common N-gram
         ngram, _ = counter.most_common()
 
