@@ -49,7 +49,7 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     sentences = [nltk.word_tokenize(s) for s in sentences]
     w = weights(sentences)
     cfg = nltk.CFG.fromstring(cfg_string)
-    parser = nltk.RecursiveDescentParser(cfg)
+    parser = nltk.ShiftReduceParser(cfg)
     rf_scores = [rf(sent, parser) for sent in sent_tags]
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     return precision
@@ -110,8 +110,7 @@ def grammar_induction(sent_tags: list, n=-1):
         l = []
         for s in sent_tags:
             for i in range(2, n + 1 if n > 0 else len(s)):
-                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1) if
-                      any(not x.startswith('NT') for x in s[j:j + i])]
+                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1) ]
         counter = Counter(l)
 
         if len(counter) == 0:
@@ -138,9 +137,9 @@ def grammar_induction(sent_tags: list, n=-1):
             while i <= len(s) - len(other):
                 if other == s[i:i + len(other)]:
                     j = i + len(other) - 1
+                    sent_tags[k][j] = non_terminal
                     sent_tags[k] = s[:i] + s[j:]
                     s = sent_tags[k]
-                    s[j - 1] = non_terminal
                     i = j
                 else:
                     i += 1
