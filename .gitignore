@@ -3,3 +3,4 @@ frontend/
 resources/
 backend/fr/
 resources.json
+test*
