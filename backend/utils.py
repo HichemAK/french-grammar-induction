@@ -54,6 +54,17 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     return precision
 
+def load_grammar(path):
+    with open(path, 'r') as f:
+        grammar = f.read()
+    grammar = nltk.CFG.fromstring(grammar)
+    return grammar
+
+def parse(sent, pos_tag, grammar):
+    sent = [x.upos for x in pos_tag(sent).iter_words()]
+    tree = list(grammar.parse(sent))
+    return tree
+
 
 def rf(sent, parser):
     i = len(sent)
