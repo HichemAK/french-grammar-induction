@@ -27,6 +27,7 @@ def create_dataset(path, pos_tag, num_sents=None):
 
 
 def grammar2cfg(rules):
+    """rules : output of grammar_induction"""
     s = ''
     for rule in rules:
         nt, other = rule
@@ -43,6 +44,10 @@ def grammar2cfg(rules):
 
 
 def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
+    """cfg_string : output of grammar2cfg
+    sentences : list of Strings
+    pos_tag : stanza model
+    sent_tags (Optional) : list of tagged sentences in 'sentences' (if you already have them)"""
     if sent_tags is None:
         sent_tags = [pos_tag(s) for s in sentences]
         sent_tags = [[x.upos for x in s.iter_words()] for s in sent_tags]
@@ -58,12 +63,21 @@ def load_grammar(path):
     with open(path, 'r') as f:
         grammar = f.read()
     grammar = nltk.CFG.fromstring(grammar)
+    grammar = nltk.RecursiveDescentParser(grammar)
     return grammar
 
 def parse(sent, pos_tag, grammar):
+    """sent : String
+    pos_tag : stanza model
+    grammar : output of load_grammar"""
     sent = [x.upos for x in pos_tag(sent).iter_words()]
     tree = list(grammar.parse(sent))
     return tree
+
+def save_grammar(path, grammar):
+    """grammar : the ouput of grammar_induction"""
+    with open(path, 'w') as f:
+        f.write(grammar2cfg(grammar))
 
 
 def rf(sent, parser):
@@ -85,6 +99,7 @@ def rf(sent, parser):
 
 
 def read_data(path, custom=False, raw=False):
+    """See test.py to see how to load data"""
     with open(path, 'r', encoding="utf-8") as f:
         sent_tags = f.readlines()
     if raw:
