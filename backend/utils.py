@@ -49,7 +49,7 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     sentences = [nltk.word_tokenize(s) for s in sentences]
     w = weights(sentences)
     cfg = nltk.CFG.fromstring(cfg_string)
-    parser = nltk.ShiftReduceParser(cfg)
+    parser = nltk.ShiftReduceParser(cfg, trace=1)
     rf_scores = [rf(sent, parser) for sent in sent_tags]
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     return precision
@@ -109,20 +109,21 @@ def grammar_induction(sent_tags: list, n=-1):
         # N-gram extraction
         l = []
         for s in sent_tags:
-            for i in range(2, n + 1 if n > 0 else len(s)):
-                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1) ]
+            for i in range(2, (n + 1 if n > 0 else len(s))):
+                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1) if any(not x.startswith('NT') for x in s[j:j + i])]
         counter = Counter(l)
 
         if len(counter) == 0:
             break
 
         # Most common N-gram
-        c = counter.most_common()
-        ngram, m = c[0]
-        for x, y in c:
-            if y < m:
-                break
-            ngram = x
+        # c = counter.most_common()
+        # ngram, m = c[0]
+        # for x, y in c:
+        #     if y < m:
+        #         break
+        #     ngram = x
+        ngram, _ = counter.most_common(1)[0]
 
         # Adding new rule
         rules.append(('NT' + str(num_rules), ngram))
@@ -145,6 +146,17 @@ def grammar_induction(sent_tags: list, n=-1):
                     i += 1
 
     # Adding root rule
+    sent_tags = list(set(tuple(x) for x in sent_tags))
+    sent_tags.sort(key=lambda x: len(x))
+    to_remove = set()
+    for i in range(len(sent_tags)):
+        for j in range(i + 1, len(sent_tags)):
+            r1, r2 = sent_tags[i], sent_tags[j]
+            if r1 == r2[:len(r1)]:
+                to_remove.add(r1)
+    sent_tags = set(sent_tags)
+    sent_tags = sent_tags.difference(to_remove)
+
     for x in sent_tags:
         rules.append(('S', tuple(x)))
     return rules[::-1]
