@@ -42,7 +42,6 @@ def grammar2cfg(rules):
         s += '\n'
     return s
 
-
 def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     """cfg_string : output of grammar2cfg
     sentences : list of Strings

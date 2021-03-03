@@ -4,3 +4,4 @@ resources/
 backend/fr/
 resources.json
 test*
+*/__pycache__/*
