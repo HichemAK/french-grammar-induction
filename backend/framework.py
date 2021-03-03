@@ -18,5 +18,5 @@ def get_grammar_cfg_string(grammar_tuples):
 def get_grammar_cfg(grammar_cfg_string):
     return nltk.CFG.fromstring(grammar_cfg_string)
 
-def get_parser(cfg):
-    return nltk.RecursiveDescentParser(cfg)
+def get_parser(grammar_cfg):
+    return nltk.RecursiveDescentParser(grammar_cfg)
