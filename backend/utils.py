@@ -58,14 +58,13 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     return precision
 
-def load_grammar(path, raw=False):
+def load_grammar(path):
     with open(path, 'r') as f:
-        grammar = f.read()
-    if raw:
-        return grammar
-    grammar = nltk.CFG.fromstring(grammar)
-    grammar = nltk.RecursiveDescentParser(grammar)
-    return grammar
+        raw = f.read()
+
+    cfg = nltk.CFG.fromstring(raw)
+    parser = nltk.RecursiveDescentParser(raw)
+    return raw, cfg, parser
 
 def parse(sent, pos_tag, grammar):
     """sent : String
