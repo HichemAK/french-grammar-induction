@@ -114,15 +114,15 @@ def rf_fast(sent, parser):
 def read_data(path, custom=False, raw=False):
     """See test.py to see how to load data"""
     with open(path, 'r', encoding="utf-8") as f:
-        sent_tags = f.readlines()
+        data = f.readlines()
     if raw:
-        return [x.strip('\n') for x in sent_tags]
+        return [x.strip('\n') for x in data]
 
     if custom:
-        sent_tags = [x.strip('\n').split(' ') for x in sent_tags]
+        data = [x.strip('\n').split(' ') for x in data]
     else:
-        sent_tags = [[y[y.rindex('_') + 1:] for y in x.strip('\n').split(' ')] for x in sent_tags]
-    return sent_tags
+        data = [[y[y.rindex('_') + 1:] for y in x.strip('\n').split(' ')] for x in data]
+    return data
 
 
 def weights(sentences):
