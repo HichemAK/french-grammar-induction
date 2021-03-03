@@ -54,14 +54,16 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     sentences = [nltk.word_tokenize(s) for s in sentences]
     w = weights(sentences)
     cfg = nltk.CFG.fromstring(cfg_string)
-    parser = nltk.ShiftReduceParser(cfg, trace=1)
-    rf_scores = [rf(sent, parser) for sent in sent_tags]
+    parser = nltk.RecursiveDescentParser(cfg, trace=0)
+    rf_scores = [rf_fast(sent, parser) for sent in sent_tags]
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     return precision
 
-def load_grammar(path):
+def load_grammar(path, raw=False):
     with open(path, 'r') as f:
         grammar = f.read()
+    if raw:
+        return grammar
     grammar = nltk.CFG.fromstring(grammar)
     grammar = nltk.RecursiveDescentParser(grammar)
     return grammar
@@ -75,7 +77,7 @@ def parse(sent, pos_tag, grammar):
     return tree
 
 def save_grammar(path, grammar):
-    """grammar : the ouput of grammar_induction"""
+    """grammar : the output of grammar_induction"""
     with open(path, 'w') as f:
         f.write(grammar2cfg(grammar))
 
@@ -97,6 +99,18 @@ def rf(sent, parser):
     print(i / len(sent))
     return i / len(sent)
 
+def rf_fast(sent, parser):
+    i = 0
+    for i in range(len(sent), 0, -1):
+        try:
+            if len(list(parser.parse(sent[:i]))) > 0:
+                break
+        except (ValueError, AttributeError):
+            pass
+    print(i / len(sent))
+    return i / len(sent)
+
+
 
 def read_data(path, custom=False, raw=False):
     """See test.py to see how to load data"""
@@ -112,16 +126,19 @@ def read_data(path, custom=False, raw=False):
     return sent_tags
 
 
-def weights(sentence):
+def weights(sentences):
     l = []
-    for s in sentence:
+    for s in sentences:
         l += [tuple(s[j:j + 2]) for j in range(len(s) - 1)]
-    f = FreqDist(l)
+    f_bigram = FreqDist(l)
+    l = [y for x in sentences for y in x]
+    f_unigram = FreqDist(l)
     weights = []
-    for s in sentence:
-        prod = 1
-        for bg in nltk.bigrams(s):
-            prod *= f.freq(bg)
+    for s in sentences:
+        s = tuple(s)
+        prod = f_unigram.freq(s[0])
+        for i in range(1, len(s)):
+            prod *= f_bigram.freq(s[i-1:i+1])/f_unigram.freq(s[i])
         weights.append(prod)
     return weights
 
@@ -174,6 +191,8 @@ def grammar_induction(sent_tags: list, n=-1):
     # Adding root rule
     sent_tags = list(set(tuple(x) for x in sent_tags))
     sent_tags.sort(key=lambda x: len(x))
+
+    # Remove duplicates
     to_remove = set()
     for i in range(len(sent_tags)):
         for j in range(i + 1, len(sent_tags)):
@@ -183,6 +202,7 @@ def grammar_induction(sent_tags: list, n=-1):
     sent_tags = set(sent_tags)
     sent_tags = sent_tags.difference(to_remove)
 
+    # Creating the source non-terminal S
     for x in sent_tags:
         rules.append(('S', tuple(x)))
     return rules[::-1]
