@@ -4,6 +4,7 @@ from collections import Counter
 
 import nltk
 from nltk import FreqDist
+import numpy as np
 
 
 def create_dataset(path, pos_tag, num_sents=None):
@@ -57,7 +58,8 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     parser = nltk.RecursiveDescentParser(cfg, trace=0)
     rf_scores = [rf_fast(sent, parser) for sent in sent_tags]
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
-    return precision
+    std = np.array(rf_scores).std()
+    return precision, std
 
 def load_grammar(path):
     with open(path, 'r') as f:
@@ -187,7 +189,6 @@ def grammar_induction(sent_tags: list, n=-1):
                 else:
                     i += 1
 
-    # Adding root rule
     sent_tags = list(set(tuple(x) for x in sent_tags))
     sent_tags.sort(key=lambda x: len(x))
 
