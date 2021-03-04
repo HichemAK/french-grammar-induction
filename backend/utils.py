@@ -33,10 +33,11 @@ def grammar2cfg(rules):
     for rule in rules:
         nt, other = rule
         s += nt + ' -> '
+        if nt == 'S':
+            s += ' | '.join(' '.join(x) for x in other) + '\n'
+            continue
         for x in other:
-            if isinstance(x, tuple):
-                s += ' | '.join(x)
-            elif x.startswith('NT'):
+            if x.startswith('NT'):
                 s += x + ' '
             else:
                 s += '"' + x + '" '
@@ -203,6 +204,5 @@ def grammar_induction(sent_tags: list, n=-1):
     sent_tags = sent_tags.difference(to_remove)
 
     # Creating the source non-terminal S
-    for x in sent_tags:
-        rules.append(('S', tuple(x)))
+    rules.append(('S', tuple(sent_tags)))
     return rules[::-1]
