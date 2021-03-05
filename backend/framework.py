@@ -27,5 +27,8 @@ def get_parser(grammar_cfg):
     return parser
 
 def parse(parser, sent):
-    tree = parser.parse(' '.join(sent))
-    return tree.pretty()
+    try:
+        tree = parser.parse(' '.join(sent))
+        return tree.pretty()
+    except (lark.UnexpectedToken, lark.UnexpectedEOF, lark.UnexpectedCharacters, lark.UnexpectedInput):
+        return ''
