@@ -4,6 +4,26 @@ from collections import Counter
 
 import nltk
 from nltk import FreqDist
+import numpy as np
+
+import re
+import lark
+
+
+def grammar_cfg_string_to_lark(cfg_string):
+    s = ""
+    terms = set(re.findall(r'("(.+?)")', cfg_string))
+    print(terms)
+    for x, y in terms:
+        s += y + " : " + x + '\n'
+
+    cfg_string = cfg_string.replace('S ->', 's ->')
+    cfg_string = re.sub(r'->', ':', cfg_string)
+    cfg_string = re.sub(r'NT(\d+)', r'nt\1', cfg_string)
+    cfg_string = re.sub(r'"(.+?)"', r'\1', cfg_string)
+    cfg_string = re.sub(r'(?<=[\w"]) (?=["\w])', r' " " ', cfg_string)
+
+    return s + cfg_string
 
 
 def create_dataset(path, pos_tag, num_sents=None):
@@ -32,10 +52,11 @@ def grammar2cfg(rules):
     for rule in rules:
         nt, other = rule
         s += nt + ' -> '
+        if nt == 'S':
+            s += ' | '.join(' '.join(x) for x in other) + '\n'
+            continue
         for x in other:
-            if isinstance(x, tuple):
-                s += ' | '.join(x)
-            elif x.startswith('NT'):
+            if x.startswith('NT'):
                 s += x + ' '
             else:
                 s += '"' + x + '" '
@@ -52,11 +73,15 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
         sent_tags = [[x.upos for x in s.iter_words()] for s in sent_tags]
     sentences = [nltk.word_tokenize(s) for s in sentences]
     w = weights(sentences)
-    cfg = nltk.CFG.fromstring(cfg_string)
-    parser = nltk.RecursiveDescentParser(cfg, trace=0)
+    cfg_string_lark = grammar_cfg_string_to_lark(cfg_string)
+    parser = lark.Lark(cfg_string_lark, start='s', lexer="dynamic_complete")
+    # tree = parser.parse(' '.join(sent_tags[0]))
+    # lark.tree.pydot__tree_to_png(tree, "example.png")
     rf_scores = [rf_fast(sent, parser) for sent in sent_tags]
+    print(len(list(filter(lambda x : x == 1, rf_scores))))
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
-    return precision
+    std = np.array(rf_scores).std()
+    return precision, std
 
 def load_grammar(path):
     with open(path, 'r') as f:
@@ -86,10 +111,10 @@ def rf(sent, parser):
     while i > 0:
         for ngram in nltk.ngrams(sent, i):
             try:
-                if len(list(parser.parse(ngram))) > 0:
-                    found = True
-                    break
-            except (ValueError, AttributeError):
+                parser.parse(' '.join(ngram))
+                found = True
+                break
+            except (lark.UnexpectedCharacters, lark.UnexpectedEOF):
                 pass
         if found:
             break
@@ -99,11 +124,11 @@ def rf(sent, parser):
 
 def rf_fast(sent, parser):
     i = 0
-    for i in range(len(sent), 0, -1):
+    for i in range(len(sent), -1, -1):
         try:
-            if len(list(parser.parse(sent[:i]))) > 0:
-                break
-        except (ValueError, AttributeError):
+            parser.parse(' '.join(sent[:i]))
+            break
+        except (lark.UnexpectedCharacters, lark.UnexpectedEOF, lark.UnexpectedToken, lark.ParseError):
             pass
     print(i / len(sent))
     return i / len(sent)
@@ -186,7 +211,6 @@ def grammar_induction(sent_tags: list, n=-1):
                 else:
                     i += 1
 
-    # Adding root rule
     sent_tags = list(set(tuple(x) for x in sent_tags))
     sent_tags.sort(key=lambda x: len(x))
 
@@ -201,6 +225,5 @@ def grammar_induction(sent_tags: list, n=-1):
     sent_tags = sent_tags.difference(to_remove)
 
     # Creating the source non-terminal S
-    for x in sent_tags:
-        rules.append(('S', tuple(x)))
+    rules.append(('S', tuple(sent_tags)))
     return rules[::-1]
