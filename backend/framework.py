@@ -26,4 +26,4 @@ def get_parser(grammar_cfg):
 
 def parse(parser, sent):
     tree = parser.parse(' '.join(sent))
-    return tree
+    return tree.pretty()
