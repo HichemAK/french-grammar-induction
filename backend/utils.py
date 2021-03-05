@@ -63,7 +63,7 @@ def load_grammar(path):
         raw = f.read()
 
     cfg = nltk.CFG.fromstring(raw)
-    parser = nltk.RecursiveDescentParser(raw)
+    parser = nltk.RecursiveDescentParser(cfg)
     return raw, cfg, parser
 
 def parse(sent, pos_tag, grammar):
