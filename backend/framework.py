@@ -20,4 +20,10 @@ def get_grammar_cfg(grammar_cfg_string):
 
 
 def get_parser(grammar_cfg):
-    return nltk.RecursiveDescentParser(grammar_cfg)
+    grammar_lark = grammar_cfg_string_to_lark(grammar_cfg)
+    parser = lark.Lark(grammar_lark, start='s', lexer="dynamic_complete")
+    return parser
+
+def parse(parser, sent):
+    tree = parser.parse(' '.join(sent))
+    return tree
