@@ -21,11 +21,14 @@ def get_grammar_cfg(grammar_cfg_string):
 
 def get_parser(grammar_cfg):
     s = str(grammar_cfg)
-    s = s[s.find('\n')+1:]
+    s = s[s.find('\n')+1:].replace("'", '"')
     grammar_lark = grammar_cfg_string_to_lark(s)
     parser = lark.Lark(grammar_lark, start='s', lexer="dynamic_complete")
     return parser
 
 def parse(parser, sent):
-    tree = parser.parse(' '.join(sent))
-    return tree.pretty()
+    try:
+        tree = parser.parse(' '.join(sent))
+        return tree.pretty()
+    except (lark.UnexpectedToken, lark.UnexpectedEOF, lark.UnexpectedCharacters, lark.UnexpectedInput):
+        return ''
