@@ -1,5 +1,8 @@
+from lark import Token
+
 from backend.utils import *
 import nltk
+from pptree import Node
 
 def tag_text(text, pos_tagger):
     sentences = nltk.sent_tokenize(text)
@@ -25,8 +28,17 @@ def get_parser(grammar_cfg_string):
     return parser
 
 def parse(parser, sent):
+
+    def to_pptree(tree, parent):
+        if isinstance(tree, Token):
+            Node(str(tree), parent)
+            return
+        root = Node(tree.data, parent)
+        for x in tree.children:
+            to_pptree(x, root)
+        return root
     try:
         tree = parser.parse(' '.join(sent))
-        return tree.pretty()
+        return to_pptree(tree, None)
     except (lark.UnexpectedToken, lark.UnexpectedEOF, lark.UnexpectedCharacters, lark.UnexpectedInput):
         return ''
