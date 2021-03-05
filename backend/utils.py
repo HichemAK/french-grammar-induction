@@ -6,6 +6,25 @@ import nltk
 from nltk import FreqDist
 import numpy as np
 
+import re
+import lark
+
+
+def grammar_cfg_string_to_lark(cfg_string):
+    s = ""
+    terms = set(re.findall(r'("(.+?)")', cfg_string))
+    print(terms)
+    for x, y in terms:
+        s += y + " : " + x + '\n'
+
+    cfg_string = cfg_string.replace('S ->', 's ->')
+    cfg_string = re.sub(r'->', ':', cfg_string)
+    cfg_string = re.sub(r'NT(\d+)', r'nt\1', cfg_string)
+    cfg_string = re.sub(r'"(.+?)"', r'\1', cfg_string)
+    cfg_string = re.sub(r'(?<=[\w"]) (?=["\w])', r' " " ', cfg_string)
+
+    return s + cfg_string
+
 
 def create_dataset(path, pos_tag, num_sents=None):
     with open(path, 'r', encoding="utf-8") as f:
@@ -55,9 +74,12 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
         sent_tags = [[x.upos for x in s.iter_words()] for s in sent_tags]
     sentences = [nltk.word_tokenize(s) for s in sentences]
     w = weights(sentences)
-    cfg = nltk.CFG.fromstring(cfg_string)
-    parser = nltk.RecursiveDescentParser(cfg, trace=0)
+    cfg_string_lark = grammar_cfg_string_to_lark(cfg_string)
+    parser = lark.Lark(cfg_string_lark, start='s', lexer="dynamic_complete")
+    # tree = parser.parse(' '.join(sent_tags[0]))
+    # lark.tree.pydot__tree_to_png(tree, "example.png")
     rf_scores = [rf_fast(sent, parser) for sent in sent_tags]
+    print(len(list(filter(lambda x : x == 1, rf_scores))))
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     std = np.array(rf_scores).std()
     return precision, std
@@ -90,10 +112,10 @@ def rf(sent, parser):
     while i > 0:
         for ngram in nltk.ngrams(sent, i):
             try:
-                if len(list(parser.parse(ngram))) > 0:
-                    found = True
-                    break
-            except (ValueError, AttributeError):
+                parser.parse(' '.join(ngram))
+                found = True
+                break
+            except (lark.UnexpectedCharacters, lark.UnexpectedEOF):
                 pass
         if found:
             break
@@ -103,11 +125,11 @@ def rf(sent, parser):
 
 def rf_fast(sent, parser):
     i = 0
-    for i in range(len(sent), 0, -1):
+    for i in range(len(sent), -1, -1):
         try:
-            if len(list(parser.parse(sent[:i]))) > 0:
-                break
-        except (ValueError, AttributeError):
+            parser.parse(' '.join(sent[:i]))
+            break
+        except (lark.UnexpectedCharacters, lark.UnexpectedEOF, lark.UnexpectedToken, lark.ParseError):
             pass
     print(i / len(sent))
     return i / len(sent)
