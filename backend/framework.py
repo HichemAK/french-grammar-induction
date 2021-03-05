@@ -19,8 +19,8 @@ def get_grammar_cfg(grammar_cfg_string):
     return nltk.CFG.fromstring(grammar_cfg_string)
 
 
-def get_parser(grammar_cfg):
-    grammar_lark = grammar_cfg_string_to_lark(grammar_cfg)
+def get_parser(grammar_cfg_string):
+    grammar_lark = grammar_cfg_string_to_lark(grammar_cfg_string)
     parser = lark.Lark(grammar_lark, start='s', lexer="dynamic_complete")
     return parser
 
