@@ -13,7 +13,6 @@ import lark
 def grammar_cfg_string_to_lark(cfg_string):
     s = ""
     terms = set(re.findall(r'("(.+?)")', cfg_string))
-    print(terms)
     for x, y in terms:
         s += y + " : " + x + '\n'
 
