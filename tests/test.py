@@ -13,7 +13,8 @@ sent_tags = zip(sent_raw, sent_tags)
 sent_tags = [x for x in sent_tags if 3 <= len(x[1]) <= 10]
 random.shuffle(sent_tags)
 print(len(sent_tags))
-sent_tags, sent_tags_test = sent_tags[:4800], sent_tags[4800:4800 + 150]
+sent_tags, sent_tags_test = sent_tags[:2], sent_tags[4800:4800 + 150]
+print(sent_tags)
 
 sent_raw, sent_tags = zip(*sent_tags)
 sent_raw, sent_tags = list(sent_raw), list(sent_tags)
