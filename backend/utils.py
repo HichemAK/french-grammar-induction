@@ -1,13 +1,12 @@
 import copy
 import os
+import re
 from collections import Counter
 
-import nltk
-from nltk import FreqDist
-import numpy as np
-
-import re
 import lark
+import nltk
+import numpy as np
+from nltk import FreqDist
 
 
 def grammar_cfg_string_to_lark(cfg_string):
@@ -78,10 +77,11 @@ def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
     # tree = parser.parse(' '.join(sent_tags[0]))
     # lark.tree.pydot__tree_to_png(tree, "example.png")
     rf_scores = [rf_fast(sent, parser) for sent in sent_tags]
-    print(len(list(filter(lambda x : x == 1, rf_scores))))
+    print(len(list(filter(lambda x: x == 1, rf_scores))))
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     std = np.array(rf_scores).std()
     return precision, std
+
 
 def load_grammar(path):
     with open(path, 'r') as f:
@@ -91,6 +91,7 @@ def load_grammar(path):
     parser = nltk.RecursiveDescentParser(raw)
     return raw, cfg, parser
 
+
 def parse(sent, pos_tag, grammar):
     """sent : String
     pos_tag : stanza model
@@ -98,6 +99,7 @@ def parse(sent, pos_tag, grammar):
     sent = [x.upos for x in pos_tag(sent).iter_words()]
     tree = list(grammar.parse(sent))
     return tree
+
 
 def save_grammar(path, grammar):
     """grammar : the output of grammar_induction"""
@@ -122,6 +124,7 @@ def rf(sent, parser):
     print(i / len(sent))
     return i / len(sent)
 
+
 def rf_fast(sent, parser):
     i = 0
     for i in range(len(sent), -1, -1):
@@ -132,7 +135,6 @@ def rf_fast(sent, parser):
             pass
     print(i / len(sent))
     return i / len(sent)
-
 
 
 def read_data(path, custom=False, raw=False):
@@ -161,7 +163,7 @@ def weights(sentences):
         s = tuple(s)
         prod = f_unigram.freq(s[0])
         for i in range(1, len(s)):
-            prod *= f_bigram.freq(s[i-1:i+1])/f_unigram.freq(s[i])
+            prod *= f_bigram.freq(s[i - 1:i + 1]) / f_unigram.freq(s[i])
         weights.append(prod)
     return weights
 
@@ -176,7 +178,8 @@ def grammar_induction(sent_tags: list, n=-1):
         l = []
         for s in sent_tags:
             for i in range(2, (n + 1 if n > 0 else len(s))):
-                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1) if any(not x.startswith('NT') for x in s[j:j + i])]
+                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1) if
+                      any(not x.startswith('NT') for x in s[j:j + i])]
         counter = Counter(l)
 
         if len(counter) == 0:
