@@ -4,7 +4,7 @@ import stanza
 
 from backend.utils import *
 from pprint import pprint
-import pickle
+
 random.seed(100)
 pos_tag = stanza.Pipeline(lang='fr', processors='tokenize,mwt,pos', dir='../backend/')
 
@@ -15,7 +15,7 @@ sent_tags = zip(sent_raw, sent_tags)
 sent_tags = [x for x in sent_tags if 3 <= len(x[1]) <= 15]
 random.shuffle(sent_tags)
 print(len(sent_tags))
-sent_tags, sent_tags_test = sent_tags[:3000], sent_tags[3000:3000 + 150]
+sent_tags, sent_tags_test = sent_tags[:30], sent_tags[:30]
 print(sent_tags)
 
 sent_raw, sent_tags = zip(*sent_tags)

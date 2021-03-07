@@ -68,7 +68,7 @@ def evaluation(cfg_string, sentences, f=None):
     """
     w = weights(sentences, f)
     cfg_string_lark = grammar_cfg_string_to_lark(cfg_string)
-    parser = lark.Lark(cfg_string_lark, start='s', lexer="dynamic_complete")
+    parser = lark.Lark(cfg_string_lark, start='s')
     rf_scores = [rf_fast(sent, parser) for sent in sentences]
     print(len(list(filter(lambda x: x == 1, rf_scores))))
     print(len(list(filter(lambda x: 1 > x >= 0.5, rf_scores))))
@@ -155,19 +155,20 @@ def compute_f_unibi(sentences):
     f_bigram = FreqDist(l)
     l = [y for x in sentences for y in x]
     f_unigram = FreqDist(l)
-    return f_unigram, f_bigram
+    f_unigram_start = FreqDist([x[0] for x in sentences])
+    return f_unigram_start, f_unigram, f_bigram
 
 def weights(sentences, freq=None):
     if freq is None:
-        f_unigram, f_bigram = compute_f_unibi(sentences)
+        f_unigram_start, f_unigram, f_bigram = compute_f_unibi(sentences)
     else:
-        f_unigram, f_bigram = freq
+        f_unigram_start, f_unigram, f_bigram = freq
     weights = []
     for s in sentences:
         s = tuple(s)
-        prod = f_unigram.freq(s[0])
+        prod = f_unigram_start.freq(s[0]) + 10**-6
         for i in range(1, len(s)):
-            prod *= f_bigram.freq(s[i - 1:i + 1]) / f_unigram.freq(s[i-1])
+            prod *= f_bigram.freq(s[i - 1:i + 1]) / (f_unigram.freq(s[i-1]) + 10**-6)
         weights.append(prod)
     return weights
 
@@ -233,5 +234,5 @@ def grammar_induction(sent_tags: list, n=-1):
     sent_tags = sent_tags.difference(to_remove)
 
     # Creating the source non-terminal S
-    rules.append(('S', tuple((x, ) for x in non_terminals)[::-1]))
+    rules.append(('S', tuple(tuple(x) for x in sent_tags)))
     return rules[::-1]
