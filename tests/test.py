@@ -12,10 +12,10 @@ sent_tags = read_data('../resources/pos_tag.txt', custom=True)
 sent_raw = read_data('../resources/raw_text.txt', raw=True)
 
 sent_tags = zip(sent_raw, sent_tags)
-sent_tags = [x for x in sent_tags if 3 <= len(x[1]) <= 15]
+sent_tags = [x for x in sent_tags if 3 <= len(x[1]) <= 10]
 random.shuffle(sent_tags)
 print(len(sent_tags))
-sent_tags, sent_tags_test = sent_tags[:30], sent_tags[:30]
+sent_tags, sent_tags_test = sent_tags[:1500], sent_tags[1500:1500 + 200]
 print(sent_tags)
 
 sent_raw, sent_tags = zip(*sent_tags)
