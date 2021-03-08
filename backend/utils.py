@@ -173,13 +173,13 @@ def weights(sentences, freq=None):
     return weights
 
 
-def grammar_induction(sent_tags: list, n=-1):
+def grammar_induction(sent_tags: list, n=2, yield_infos=False):
     sent_tags = copy.deepcopy(sent_tags)
     rules = []
     non_terminals = []
     num_rules = 1
     while True:
-        print(sum(len(x) for x in sent_tags))
+        remaining = sum(len(x) for x in sent_tags)
         # N-gram extraction
         l = []
         for s in sent_tags:
@@ -219,6 +219,9 @@ def grammar_induction(sent_tags: list, n=-1):
                     i = j
                 else:
                     i += 1
+        if yield_infos:
+            infos = {'progression' : len(sent_tags)/remaining}
+            yield infos
 
     sent_tags = list(set(tuple(x) for x in sent_tags))
     sent_tags.sort(key=lambda x: len(x))
@@ -235,4 +238,7 @@ def grammar_induction(sent_tags: list, n=-1):
 
     # Creating the source non-terminal S
     rules.append(('S', tuple(tuple(x) for x in sent_tags)))
-    return rules[::-1]
+    if yield_infos:
+        yield rules[::-1]
+    else:
+        return rules[::-1]
