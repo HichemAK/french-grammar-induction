@@ -42,4 +42,9 @@ pprint(rules[-20:])
 cfg = grammar2cfg(rules)
 with open('grammar', 'w') as f:
     f.write(cfg)
-print(evaluation(cfg, sent_tags_test, freq))
+
+for x in evaluation(cfg, sent_tags_test, freq, yield_infos=True):
+    if isinstance(x, dict):
+        print(x)
+    else:
+        break

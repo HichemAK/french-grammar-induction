@@ -62,20 +62,30 @@ def grammar2cfg(rules):
     return s
 
 
-def evaluation(cfg_string, sentences, f=None):
+def evaluation(cfg_string, sentences, f=None, fast=True, yield_infos=False):
     """cfg_string : output of grammar2cfg
     sentences : list of tagged sentences
     """
     w = weights(sentences, f)
     cfg_string_lark = grammar_cfg_string_to_lark(cfg_string)
     parser = lark.Lark(cfg_string_lark, start='s')
-    rf_scores = [rf_fast(sent, parser) for sent in sentences]
+    rf_scores = []
+    for i, sent in enumerate(sentences, start=1):
+        x = rf_fast(sent, parser) if fast else rf(sent, parser)
+        rf_scores.append(x)
+        if yield_infos:
+            infos = {"progression" : i,
+                     "rf" : x}
+            yield infos
     print(len(list(filter(lambda x: x == 1, rf_scores))))
     print(len(list(filter(lambda x: 1 > x >= 0.5, rf_scores))))
     print(len(list(filter(lambda x: x < 0.5, rf_scores))))
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     std = np.array(rf_scores).std()
-    return precision, std
+    if yield_infos:
+        yield precision, std
+    else:
+        return precision, std
 
 
 def load_grammar(path):
@@ -116,7 +126,6 @@ def rf(sent, parser):
         if found:
             break
         i -= 1
-    print(i / len(sent))
     return i / len(sent)
 
 
@@ -128,7 +137,6 @@ def rf_fast(sent, parser):
             break
         except (lark.UnexpectedCharacters, lark.UnexpectedEOF, lark.UnexpectedToken, lark.ParseError):
             pass
-    print(i / len(sent))
     return i / len(sent)
 
 
