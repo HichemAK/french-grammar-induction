@@ -65,3 +65,12 @@ def parse(parser, sent):
         return result
     except Exception:
         return ''
+
+
+def get_infos_grammar(grammar_cfg_string:str):
+    infos = {}
+    infos['number_of_rules'] = grammar_cfg_string.count('->')
+    infos['number_of_non_terminals'] = len(set(re.findall(r'NT\d+?', grammar_cfg_string))) + 1
+    infos['number_of_terminals'] = len(set(re.findall(r'".+?"', grammar_cfg_string)))
+    infos['number_of_starting_nodes'] = re.findall(r'S -> .+', grammar_cfg_string)[0].split('->').count('|') + 1
+    return infos
