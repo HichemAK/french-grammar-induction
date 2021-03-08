@@ -1,13 +1,12 @@
 import copy
 import os
+import re
 from collections import Counter
 
-import nltk
-from nltk import FreqDist
-import numpy as np
-
-import re
 import lark
+import nltk
+import numpy as np
+from nltk import FreqDist
 
 
 def grammar_cfg_string_to_lark(cfg_string):
@@ -62,25 +61,21 @@ def grammar2cfg(rules):
         s += '\n'
     return s
 
-def evaluation(cfg_string, sentences, pos_tag, sent_tags=None):
+def evaluation(cfg_string, sentences, f=None):
     """cfg_string : output of grammar2cfg
-    sentences : list of Strings
-    pos_tag : stanza model
-    sent_tags (Optional) : list of tagged sentences in 'sentences' (if you already have them)"""
-    if sent_tags is None:
-        sent_tags = [pos_tag(s) for s in sentences]
-        sent_tags = [[x.upos for x in s.iter_words()] for s in sent_tags]
-    sentences = [nltk.word_tokenize(s) for s in sentences]
-    w = weights(sentences)
+    sentences : list of tagged sentences
+    """
+    w = weights(sentences, f)
     cfg_string_lark = grammar_cfg_string_to_lark(cfg_string)
-    parser = lark.Lark(cfg_string_lark, start='s', lexer="dynamic_complete")
-    # tree = parser.parse(' '.join(sent_tags[0]))
-    # lark.tree.pydot__tree_to_png(tree, "example.png")
-    rf_scores = [rf_fast(sent, parser) for sent in sent_tags]
-    print(len(list(filter(lambda x : x == 1, rf_scores))))
+    parser = lark.Lark(cfg_string_lark, start='s')
+    rf_scores = [rf_fast(sent, parser) for sent in sentences]
+    print(len(list(filter(lambda x: x == 1, rf_scores))))
+    print(len(list(filter(lambda x: 1 > x >= 0.5, rf_scores))))
+    print(len(list(filter(lambda x: x < 0.5, rf_scores))))
     precision = sum(w[i] * rf_scores[i] for i in range(len(w))) / sum(w)
     std = np.array(rf_scores).std()
     return precision, std
+
 
 def load_grammar(path):
     with open(path, 'r') as f:
@@ -90,6 +85,7 @@ def load_grammar(path):
     parser = nltk.RecursiveDescentParser(cfg)
     return raw, cfg, parser
 
+
 def parse(sent, pos_tag, grammar):
     """sent : String
     pos_tag : stanza model
@@ -97,6 +93,7 @@ def parse(sent, pos_tag, grammar):
     sent = [x.upos for x in pos_tag(sent).iter_words()]
     tree = list(grammar.parse(sent))
     return tree
+
 
 def save_grammar(path, grammar):
     """grammar : the output of grammar_induction"""
@@ -121,6 +118,7 @@ def rf(sent, parser):
     print(i / len(sent))
     return i / len(sent)
 
+
 def rf_fast(sent, parser):
     i = 0
     for i in range(len(sent), -1, -1):
@@ -131,7 +129,6 @@ def rf_fast(sent, parser):
             pass
     print(i / len(sent))
     return i / len(sent)
-
 
 
 def read_data(path, custom=False, raw=False):
@@ -148,19 +145,29 @@ def read_data(path, custom=False, raw=False):
     return data
 
 
-def weights(sentences):
+def compute_f_unibi(sentences):
+    if isinstance(sentences[0], str):
+        sentences = [nltk.word_tokenize(s) for s in sentences]
     l = []
     for s in sentences:
         l += [tuple(s[j:j + 2]) for j in range(len(s) - 1)]
     f_bigram = FreqDist(l)
     l = [y for x in sentences for y in x]
     f_unigram = FreqDist(l)
+    f_unigram_start = FreqDist([x[0] for x in sentences])
+    return f_unigram_start, f_unigram, f_bigram
+
+def weights(sentences, freq=None):
+    if freq is None:
+        f_unigram_start, f_unigram, f_bigram = compute_f_unibi(sentences)
+    else:
+        f_unigram_start, f_unigram, f_bigram = freq
     weights = []
     for s in sentences:
         s = tuple(s)
-        prod = f_unigram.freq(s[0])
+        prod = f_unigram_start.freq(s[0]) + 10**-6
         for i in range(1, len(s)):
-            prod *= f_bigram.freq(s[i-1:i+1])/f_unigram.freq(s[i])
+            prod *= f_bigram.freq(s[i - 1:i + 1]) / (f_unigram.freq(s[i-1]) + 10**-6)
         weights.append(prod)
     return weights
 
@@ -168,6 +175,7 @@ def weights(sentences):
 def grammar_induction(sent_tags: list, n=-1):
     sent_tags = copy.deepcopy(sent_tags)
     rules = []
+    non_terminals = []
     num_rules = 1
     while True:
         print(sum(len(x) for x in sent_tags))
@@ -175,7 +183,7 @@ def grammar_induction(sent_tags: list, n=-1):
         l = []
         for s in sent_tags:
             for i in range(2, (n + 1 if n > 0 else len(s))):
-                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1) if any(not x.startswith('NT') for x in s[j:j + i])]
+                l += [tuple(s[j:j + i]) for j in range(len(s) - i + 1)]
         counter = Counter(l)
 
         if len(counter) == 0:
@@ -191,6 +199,7 @@ def grammar_induction(sent_tags: list, n=-1):
         ngram, _ = counter.most_common(1)[0]
 
         # Adding new rule
+        non_terminals.append('NT' + str(num_rules))
         rules.append(('NT' + str(num_rules), ngram))
         num_rules += 1
 
@@ -224,5 +233,5 @@ def grammar_induction(sent_tags: list, n=-1):
     sent_tags = sent_tags.difference(to_remove)
 
     # Creating the source non-terminal S
-    rules.append(('S', tuple(sent_tags)))
+    rules.append(('S', tuple(tuple(x) for x in sent_tags)))
     return rules[::-1]

@@ -1,13 +1,20 @@
-from lark import Token
+import re
+from io import StringIO
 
-from backend.utils import *
+import lark
 import nltk
+from lark import Token
 from pptree import Node
+from termcolor import colored
+
+from backend.utils import grammar_induction, grammar2cfg, grammar_cfg_string_to_lark
+
 
 def tag_text(text, pos_tagger):
     sentences = nltk.sent_tokenize(text)
     sentences = [[x.upos for x in pos_tagger(s).iter_words()] for s in sentences]
     return sentences
+
 
 def get_grammar_tuples(sentences):
     """sentences : output of tag_text"""
@@ -27,8 +34,18 @@ def get_parser(grammar_cfg_string):
     parser = lark.Lark(grammar_lark, start='s', lexer="dynamic_complete")
     return parser
 
-def parse(parser, sent):
 
+def pprint_tree(node, file=None, _prefix="", _last=True):
+    print(_prefix, "`- " if _last else "|- ", node.name if len(node.children) else colored(node.name, 'red'), sep="",
+          file=file)
+    _prefix += "   " if _last else "|  "
+    child_count = len(node.children)
+    for i, child in enumerate(node.children):
+        _last = i == (child_count - 1)
+        pprint_tree(child, file, _prefix, _last)
+
+
+def parse(parser, sent):
     def to_pptree(tree, parent):
         if isinstance(tree, Token):
             Node(str(tree), parent)
@@ -37,8 +54,14 @@ def parse(parser, sent):
         for x in tree.children:
             to_pptree(x, root)
         return root
+
     try:
         tree = parser.parse(' '.join(sent))
-        return to_pptree(tree, None)
+        result = StringIO()
+        pprint_tree(to_pptree(tree, None), file=result)
+        result = result.getvalue()
+        result = re.sub(r'nt([0-9]+)', r'NT\1', result)
+        result = re.sub(r's(?!\w)', r'S', result)
+        return result
     except (lark.UnexpectedToken, lark.UnexpectedEOF, lark.UnexpectedCharacters, lark.UnexpectedInput):
         return ''
