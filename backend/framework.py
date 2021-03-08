@@ -11,7 +11,7 @@ from backend.utils import grammar_induction, grammar2cfg, grammar_cfg_string_to_
 
 
 def tag_text(text, pos_tagger):
-    sentences = nltk.sent_tokenize(text)
+    sentences = nltk.sent_tokenize(text, language="french")
     sentences = [[x.upos for x in pos_tagger(s).iter_words()] for s in sentences]
     return sentences
 
