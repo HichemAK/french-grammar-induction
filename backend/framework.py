@@ -63,5 +63,5 @@ def parse(parser, sent):
         result = re.sub(r'nt([0-9]+)', r'NT\1', result)
         result = re.sub(r's(?!\w)', r'S', result)
         return result
-    except (lark.UnexpectedToken, lark.UnexpectedEOF, lark.UnexpectedCharacters, lark.UnexpectedInput):
+    except Exception:
         return ''
