@@ -30,7 +30,13 @@ print(sent_tags_test[0])
 
 # test = ["Je suis Hichem."]
 # test = [[str(x) for x in y] for y in test]
-rules = grammar_induction(sent_tags, n=2)
+x = None
+for x in grammar_induction(sent_tags, n=2, yield_infos=True):
+    if isinstance(x, dict):
+        print(x['progression'])
+    else:
+        break
+rules = x
 print(len(rules) - len(list(filter(lambda x : x[0] == 'S', rules))))
 pprint(rules[-20:])
 cfg = grammar2cfg(rules)
