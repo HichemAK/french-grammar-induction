@@ -5,7 +5,6 @@ import lark
 import nltk
 from lark import Token
 from pptree import Node
-from termcolor import colored
 
 from backend.utils import grammar_induction, grammar2cfg, grammar_cfg_string_to_lark
 
@@ -36,7 +35,8 @@ def get_parser(grammar_cfg_string):
 
 
 def pprint_tree(node, file=None, _prefix="", _last=True):
-    print(_prefix, "`- " if _last else "|- ", node.name if len(node.children) else colored(node.name, 'red'), sep="",
+    print(_prefix, "`- " if _last else "|- ",
+          node.name if len(node.children) else f'<span style="color: red;">{node.name}</span>', sep="",
           file=file)
     _prefix += "   " if _last else "|  "
     child_count = len(node.children)
@@ -67,10 +67,10 @@ def parse(parser, sent):
         return ''
 
 
-def get_infos_grammar(grammar_cfg_string:str):
+def get_infos_grammar(grammar_cfg_string: str):
     infos = {}
     infos['number_of_rules'] = grammar_cfg_string.count('->')
-    infos['number_of_non_terminals'] = len(set(re.findall(r'NT\d+?', grammar_cfg_string))) + 1
+    infos['number_of_non_terminals'] = len(set(re.findall(r'NT\d+', grammar_cfg_string))) + 1
     infos['number_of_terminals'] = len(set(re.findall(r'".+?"', grammar_cfg_string)))
     infos['number_of_starting_nodes'] = re.findall(r'S -> .+', grammar_cfg_string)[0].split('->').count('|') + 1
     return infos
