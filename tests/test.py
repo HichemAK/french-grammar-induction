@@ -2,6 +2,7 @@ import random
 
 import stanza
 
+from backend.framework import get_parser
 from backend.utils import *
 from pprint import pprint
 
@@ -43,7 +44,7 @@ cfg = grammar2cfg(rules)
 with open('grammar', 'w') as f:
     f.write(cfg)
 
-for x in evaluation(cfg, sent_tags_test, freq, yield_infos=True):
+for x in evaluation(get_parser(cfg), sent_tags_test, freq, yield_infos=True):
     if isinstance(x, dict):
         print(x)
     else:
