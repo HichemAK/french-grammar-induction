@@ -62,13 +62,11 @@ def grammar2cfg(rules):
     return s
 
 
-def evaluation(cfg_string, sentences, f=None, fast=True, yield_infos=False):
+def evaluation(parser, sentences, f=None, fast=True, yield_infos=False):
     """cfg_string : output of grammar2cfg
     sentences : list of tagged sentences
     """
     w = weights(sentences, f)
-    cfg_string_lark = grammar_cfg_string_to_lark(cfg_string)
-    parser = lark.Lark(cfg_string_lark, start='s')
     rf_scores = []
     for i, sent in enumerate(sentences, start=1):
         x = rf_fast(sent, parser) if fast else rf(sent, parser)
