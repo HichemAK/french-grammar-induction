@@ -44,8 +44,10 @@ cfg = grammar2cfg(rules)
 with open('grammar', 'w') as f:
     f.write(cfg)
 
+x = None
 for x in evaluation(get_parser(cfg), sent_tags_test, freq, yield_infos=True):
     if isinstance(x, dict):
         print(x)
     else:
         break
+precision, std = x
