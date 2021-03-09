@@ -36,7 +36,13 @@ def get_parser(grammar_cfg_string):
 
 def pprint_tree(node, file=None, _prefix="", _last=True):
     print(_prefix, "`- " if _last else "|- ",
-          node.name if len(node.children) else f'<span style="color: red;">{node.name}</span>', sep="",
+          node.name if len(node.children) else f'<span '
+          f'style="'
+          f'background-color: #2494A2; '
+          f'border-radius: 10px; '
+          f'text-align: center;'
+          f'color: #2D325A;'
+          f'"> {node.name} </span>', sep="",
           file=file)
     _prefix += "   " if _last else "|  "
     child_count = len(node.children)
