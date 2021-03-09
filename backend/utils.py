@@ -132,7 +132,7 @@ def rf_fast(sent, parser):
         try:
             parser.parse(' '.join(sent[:i]))
             break
-        except (lark.UnexpectedCharacters, lark.UnexpectedEOF, lark.UnexpectedToken, lark.ParseError):
+        except Exception:
             pass
     return i / len(sent)
 
