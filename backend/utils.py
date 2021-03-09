@@ -173,7 +173,7 @@ def weights(sentences, freq=None):
         s = tuple(s)
         prod = f_unigram_start.freq(s[0]) + 10**-6
         for i in range(1, len(s)):
-            prod *= f_bigram.freq(s[i - 1:i + 1]) + 10**-6 / (f_unigram.freq(s[i-1]) + 10**-6)
+            prod *= (f_bigram.freq(s[i - 1:i + 1]) + 10**-6) / (f_unigram.freq(s[i-1]) + 10**-6)
         weights.append(prod)
     return weights
 
